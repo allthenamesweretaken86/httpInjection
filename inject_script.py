@@ -5,39 +5,41 @@ import pandas as pd
 import pickle
 import time
 
+#mitmdump -s inject_script.py
 
 def appendPickle(data):
 	df1 = pd.read_pickle("./pickles/data.pickle")
-	df = pd.DataFrame().from_dict(data)
-	df.columns = df1.columns
-	l = len(df) + len(df1)
-	df.append(df1, index=[0])
+	df = pd.DataFrame()
+	for k,v in data.items():
+		df[k] = str(v)
+		ctx.log.info(f"key: {k}")
+		ctx.log.info(f"value: {v}")
+	#df2 = pd.concat([df,df1], ignore_index=True, axis=0)
+	df2 = pd.DataFrame(data, index=[0])
 	df.to_pickle("./pickles/data.pickle")
-	ctx.log.info("saved")
+	ctx.log.info(f"data: {data}")
 
 
 def saveData(flow):
 	flow_dict = vars(flow)
 	data = {}
-
-	# try:
-	# 	df = pd.read_pickle('./pickles/data.pickle')
-	# except:
-	# 	df = pd.DataFrame()
-	# data = {}
 	for item in flow_dict:
 		key = str(item)
 		value = str(flow_dict[key])
-		ctx.log.info(f"key: {key}")
-		ctx.log.info(f"value: {value}")
+		#ctx.log.info(f"key: {key}")
+		#ctx.log.info(f"value: {value}")
 		while len(value) > 500:
 			value = BeautifulSoup(value, features = "html.parser")
 			for key in value:
 				value = str(value[key])
-		else:
-			data[key] = value
 
-		appendPickle(data)
+		else:
+			if value:
+				data[key] = value
+
+		
+	print(f'data {data}')
+	appendPickle(data)
 
 		
 
