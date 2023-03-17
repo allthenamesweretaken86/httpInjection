@@ -20,7 +20,6 @@ def response(flow):
 	ctx.script = "./js/alert.js"
 	if flow.request.host in ctx.script:
 		return  # Make sure JS isn't injected to itself
-	headers = BeautifulSoup(flow.response.headers, features = "html.parser")
 	html = BeautifulSoup(flow.response.content, features = "html.parser")
 	if html.body and ("text/html" in flow.response.headers["content-type"]):     # inject only for HTML resources
 		# delete CORS header if present
@@ -35,17 +34,14 @@ def response(flow):
 		flow.response.text = str(html)
 		ctx.log.info("script injected")
 
-		##
-		#ctx.log.info(str(flow.request.url))
-		#ctx.log.info(type(vars(flow.request)))
-
-		
-
+		for item in flow.response.headers:
+			ctx.log.info(f'Header: {str(item)}')
+			
 		###
 		bodys.append(str(html.body))
 		urls.append(str(flow.request.url))
-		data['urls'] = urls
-		data['bodys']=bodys
+		#data['urls'] = urls
+		#data['bodys']=bodys
 
 		ctx.log.info(str(data.urls))
 
